@@ -162,6 +162,7 @@ class IOConnection implements IOCallback {
 	 */
 	private class ReconnectTask extends TimerTask {
 
+
 		/*
 		 * (non-Javadoc)
 		 * 
@@ -169,6 +170,7 @@ class IOConnection implements IOCallback {
 		 */
 		@Override
 		public void run() {
+			logger.info("reconnect task");
 			connectTransport();
 			if (!keepAliveInQueue) {
 				sendPlain("2::");
@@ -318,6 +320,8 @@ class IOConnection implements IOCallback {
 	 * Connect transport.
 	 */
 	private synchronized void connectTransport() {
+		logger.info("connecttransport");
+		logger.info(String.valueOf(getState()));
 		if (getState() == STATE_INVALID)
 			return;
 		setState(STATE_CONNECTING);
@@ -463,6 +467,7 @@ class IOConnection implements IOCallback {
 	 * Invalidates an {@link IOTransport}, used for forced reconnecting.
 	 */
 	private void invalidateTransport() {
+		logger.info("invalidate");
 		if (transport != null)
 			transport.invalidate();
 		transport = null;
@@ -472,7 +477,10 @@ class IOConnection implements IOCallback {
 	 * Reset timeout.
 	 */
 	private void resetTimeout() {
+		logger.info("reset timeout");
 		if (heartbeatTimeoutTask != null) {
+			logger.info("timeout is not null");
+			logger.info("canceling");
 			heartbeatTimeoutTask.cancel();
 		}
 		heartbeatTimeoutTask = new HearbeatTimeoutTask();
@@ -490,6 +498,7 @@ class IOConnection implements IOCallback {
 	 * @throws SocketIOException
 	 */
 	private IOCallback findCallback(IOMessage message) throws SocketIOException {
+		logger.info("findcallback");
 		if ("".equals(message.getEndpoint()))
 			return this;
 		SocketIO socket = sockets.get(message.getEndpoint());
@@ -506,8 +515,10 @@ class IOConnection implements IOCallback {
 	 * {@link IOTransport} calls this when a connection is established.
 	 */
 	public synchronized void transportConnected() {
+		logger.info("transport connected");
 		setState(STATE_READY);
 		if (reconnectTask != null) {
+			logger.info("canceling");
 			reconnectTask.cancel();
 			reconnectTask = null;
 		}
@@ -543,9 +554,13 @@ class IOConnection implements IOCallback {
 	 * {@link IOTransport} calls this when a connection has been shut down.
 	 */
 	public void transportDisconnected() {
+		logger.info("disconnected");
 		this.lastException = null;
+		logger.info("a");
 		setState(STATE_INTERRUPTED);
-		reconnect();
+		logger.info("b");
+		logger.info("calling reconnect");
+		//reconnect();
 	}
 
 	/**
@@ -556,9 +571,10 @@ class IOConnection implements IOCallback {
 	 *            has occurred and the transport is not usable anymore.
 	 */
 	public void transportError(Exception error) {
+		logger.info("interrupted");
 		this.lastException = error;
 		setState(STATE_INTERRUPTED);
-		reconnect();
+		//reconnect();
 	}
 
 	/**
@@ -745,10 +761,12 @@ class IOConnection implements IOCallback {
 	 * do not shut down TCP-connections when switching from HSDPA to Wifi
 	 */
 	public synchronized void reconnect() {
+		logger.info("reconnect ");
 		if (getState() != STATE_INVALID) {
 			invalidateTransport();
 			setState(STATE_INTERRUPTED);
 			if (reconnectTask != null) {
+				logger.info("canceling");
 				reconnectTask.cancel();
 			}
 			reconnectTask = new ReconnectTask();
